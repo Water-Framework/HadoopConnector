@@ -11,11 +11,11 @@ import lombok.Setter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
+import org.apache.hadoop.io.IOUtils;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 
 /**
@@ -58,7 +58,7 @@ class HadoopConnectorApiTest implements Service {
         cluster.waitClusterUp();
         fs = FileSystem.get(conf);
         hadoopOptions = new HadoopOptionsImplOverride(fs.getUri().toString());
-        componentRegistry.registerComponent(HadoopOptions.class,hadoopOptions, ComponentConfigurationFactory.createNewComponentPropertyFactory().withPriority(2).build());
+        componentRegistry.registerComponent(HadoopOptions.class, hadoopOptions, ComponentConfigurationFactory.createNewComponentPropertyFactory().withPriority(2).build());
     }
 
     @AfterAll
@@ -79,25 +79,65 @@ class HadoopConnectorApiTest implements Service {
 
     @Test()
     @Order(2)
-    public void copyFileShouldWork() throws IOException {
+    void uploadFileShouldWork() {
         File exampleFile = new File(this.getClass().getClassLoader().getResource("tmp/example.txt").getFile());
-        hadoopConnectorSystemApi.upload(exampleFile, "/dest/example.txt", true);
+        Assertions.assertDoesNotThrow(() -> this.hadoopConnectorSystemApi.upload(exampleFile, "/dest/example.txt", true));
     }
 
 
     @Test
     @Order(3)
-    public void copyFileShouldFailIfPathAlreadyExistsAsADirectory() throws IOException {
+    void uploadFileShouldFailIfPathAlreadyExistsAsADirectory() throws IOException {
         // Test will be runs if docker image has been launched.
         // Please runs "docker-compose -f docker-compose-svil-hdfs-only.yml up"
         File exampleFile = new File(this.getClass().getClassLoader().getResource("tmp/example.txt").getFile());
-        hadoopConnectorSystemApi.upload(exampleFile, "/dest/example.txt", true);
+        Assertions.assertThrows(IllegalStateException.class, () -> hadoopConnectorSystemApi.upload(exampleFile, "/dest/example.txt", true));
     }
-
 
     @Test
     @Order(4)
+    void downloadFileShouldWork() throws IOException {
+        File exampleFile = new File(this.getClass().getClassLoader().getResource("tmp/example.txt").getFile());
+        ByteArrayInputStream fileInputStream = new ByteArrayInputStream(Files.readAllBytes(exampleFile.toPath()));
+        String localContent = new String(fileInputStream.readAllBytes());
+        InputStream hadoopIs = hadoopConnectorSystemApi.download("/dest/example.txt");
+        ByteArrayInputStream bais = new ByteArrayInputStream(hadoopIs.readAllBytes());
+        String hadoopFileContent = new String(bais.readAllBytes());
+        Assertions.assertEquals(localContent, hadoopFileContent);
+        hadoopIs.close();
+    }
+
+    @Test
+    @Order(5)
+    void appendToFileShouldWork() throws IOException {
+        InputStream hadoopIs = hadoopConnectorSystemApi.download("/dest/example.txt");
+        ByteArrayInputStream bais = new ByteArrayInputStream(hadoopIs.readAllBytes());
+        String hadoopOriginalFileContent = new String(bais.readAllBytes());
+        hadoopIs.close();
+        OutputStream outputStream = hadoopConnectorSystemApi.appendToFile("/dest/example.txt");
+        outputStream.write("--content-added--".getBytes());
+        outputStream.flush();
+        outputStream.close();
+        hadoopIs = hadoopConnectorSystemApi.download("/dest/example.txt");
+        bais = new ByteArrayInputStream(hadoopIs.readAllBytes());
+        Assertions.assertEquals(hadoopOriginalFileContent+"--content-added--", new String(bais.readAllBytes()));
+    }
+
+    @Test
+    @Order(6)
     void deleteFileShouldWork() throws IOException {
-        hadoopConnectorSystemApi.deleteFile("/tmp/example.txt");
+        Assertions.assertTrue(hadoopConnectorSystemApi.exists("/dest/example.txt"));
+        hadoopConnectorSystemApi.deleteFile("/dest/example.txt");
+        Assertions.assertFalse(hadoopConnectorSystemApi.exists("/dest/example.txt"));
+    }
+
+    @Test
+    @Order(7)
+    void createFodlerShouldWork() throws IOException {
+        Assertions.assertFalse(hadoopConnectorSystemApi.exists("/dest/folder"));
+        hadoopConnectorSystemApi.createFolder("/dest/folder");
+        Assertions.assertTrue(hadoopConnectorSystemApi.exists("/dest/folder"));
+        hadoopConnectorSystemApi.deleteFolder("/dest/folder");
+        Assertions.assertFalse(hadoopConnectorSystemApi.exists("/dest/folder"));
     }
 }

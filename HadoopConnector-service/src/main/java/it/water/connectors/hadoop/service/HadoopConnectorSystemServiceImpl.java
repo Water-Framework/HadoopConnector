@@ -30,13 +30,22 @@ public class HadoopConnectorSystemServiceImpl extends BaseSystemServiceImpl impl
     private Configuration configuration;
 
     @Override
+    public boolean exists(String path) throws IOException {
+        FileSystem fileSystem = getHadoopFileSystem();
+        Path p = new Path(path);
+        return fileSystem.exists(p);
+    }
+
+    @Override
     public void upload(File file, String path, boolean deleteSource) throws IOException {
         FileSystem fileSystem = getHadoopFileSystem();
-        if (fileSystem == null)
-            return;
-        OutputStream os = fileSystem.create(new Path(path));
-        InputStream is = new BufferedInputStream(new FileInputStream(file));
-        IOUtils.copyBytes(is, os, configuration); // copy content to file which has been created previously
+        if (exists(path))
+            throw new IllegalStateException("path already exists");
+        Path p = new Path(path);
+        try (OutputStream os = fileSystem.create(p)) {
+            InputStream is = new BufferedInputStream(new FileInputStream(file));
+            IOUtils.copyBytes(is, os, configuration); // copy content to file which has been created previously
+        }
     }
 
     public InputStream download(String pathStr) throws IOException {
@@ -45,7 +54,7 @@ public class HadoopConnectorSystemServiceImpl extends BaseSystemServiceImpl impl
         if (fileSystem.exists(path)) {
             return fileSystem.open(path);
         }
-        throw new WaterRuntimeException("File not found!");
+        throw new IllegalStateException("path does not exist");
     }
 
     public OutputStream appendToFile(String pathStr) throws IOException {
@@ -56,6 +65,14 @@ public class HadoopConnectorSystemServiceImpl extends BaseSystemServiceImpl impl
         } else {
             return fileSystem.append(path);
         }
+    }
+
+    public void createFolder(String path) throws IOException {
+        FileSystem fileSystem = getHadoopFileSystem();
+        if (exists(path))
+            throw new IllegalStateException("path already exists");
+        Path p = new Path(path);
+        fileSystem.create(p);
     }
 
     @Override
@@ -93,11 +110,11 @@ public class HadoopConnectorSystemServiceImpl extends BaseSystemServiceImpl impl
                 configuration.set("hadoop.security.token.service.use_ip", "false");
             }
             return FileSystem.get(configuration);
-        } catch (Throwable t) {
+        } catch (Exception t) {
             getLog().error(t.getMessage(), t);
         } finally {
             Thread.currentThread().setContextClassLoader(externalClassLoader);
         }
-        return null;
+        throw new WaterRuntimeException("Cannot find HDFS filesystem");
     }
 }

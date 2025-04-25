@@ -13,6 +13,14 @@ import java.io.OutputStream;
  */
 public interface HadoopConnectorSystemApi extends BaseSystemApi {
     /**
+     *
+     * @param path
+     * @return
+     * @throws IOException
+     */
+    boolean exists(String path) throws IOException;
+
+    /**
      * It copies file to HDFS
      *
      * @param file         file to copy
@@ -35,6 +43,13 @@ public interface HadoopConnectorSystemApi extends BaseSystemApi {
      * @throws IOException
      */
     OutputStream appendToFile(String pathStr) throws IOException;
+
+    /**
+     *
+     * @param path
+     * @throws IOException
+     */
+    public void createFolder(String path) throws IOException;
 
     /**
      * It deletes file
