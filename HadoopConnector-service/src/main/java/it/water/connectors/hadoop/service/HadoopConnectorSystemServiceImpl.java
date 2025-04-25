@@ -30,12 +30,22 @@ public class HadoopConnectorSystemServiceImpl extends BaseSystemServiceImpl impl
     private Configuration configuration;
 
     @Override
-    public void copyFile(File file, String path, boolean deleteSource) throws IOException {
+    public void upload(File file, String path, boolean deleteSource) throws IOException {
         FileSystem fileSystem = getHadoopFileSystem();
-        fileSystem.create(new Path(path));    // create file
+        if (fileSystem == null)
+            return;
         OutputStream os = fileSystem.create(new Path(path));
         InputStream is = new BufferedInputStream(new FileInputStream(file));
         IOUtils.copyBytes(is, os, configuration); // copy content to file which has been created previously
+    }
+
+    public InputStream download(String pathStr) throws IOException {
+        FileSystem fileSystem = getHadoopFileSystem();
+        Path path = new Path(pathStr);
+        if (fileSystem.exists(path)) {
+            return fileSystem.open(path);
+        }
+        throw new WaterRuntimeException("File not found!");
     }
 
     public OutputStream appendToFile(String pathStr) throws IOException {
@@ -46,15 +56,6 @@ public class HadoopConnectorSystemServiceImpl extends BaseSystemServiceImpl impl
         } else {
             return fileSystem.append(path);
         }
-    }
-
-    public InputStream readFile(String pathStr) throws IOException {
-        FileSystem fileSystem = getHadoopFileSystem();
-        Path path = new Path(pathStr);
-        if (fileSystem.exists(path)) {
-            return fileSystem.open(path);
-        }
-        throw new WaterRuntimeException("File not found!");
     }
 
     @Override
@@ -78,7 +79,7 @@ public class HadoopConnectorSystemServiceImpl extends BaseSystemServiceImpl impl
     private FileSystem getHadoopFileSystem() {
         // Set bundle class loader in order to find classes defined inside this bundle:
         // this is required for Configuration to load DistributedFileSystem class
-        ClassLoader karafClassLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader externalClassLoader = Thread.currentThread().getContextClassLoader();
         ClassLoader thisClassLoader = this.getClass().getClassLoader();
         Thread.currentThread().setContextClassLoader(thisClassLoader);
         try {
@@ -95,7 +96,7 @@ public class HadoopConnectorSystemServiceImpl extends BaseSystemServiceImpl impl
         } catch (Throwable t) {
             getLog().error(t.getMessage(), t);
         } finally {
-            Thread.currentThread().setContextClassLoader(karafClassLoader);
+            Thread.currentThread().setContextClassLoader(externalClassLoader);
         }
         return null;
     }

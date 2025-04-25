@@ -60,8 +60,6 @@ dependencies {
 	testImplementation group: 'it.water.service.rest', name: 'Rest-api-manager-apache-cxf', version: project.waterVersion
 	//Using javax jpa for testing purpose
 	testImplementation("org.apache.hadoop:hadoop-minicluster:3.4.1")
-
-	testImplementation group: 'org.apache.hadoop', name:'hadoop-common', version: project.hadoopClientVersion
 	testImplementation group: 'org.reflections', name: 'reflections', version: '0.10.2'
 	testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
 	testImplementation group: 'org.apache.cxf', name: 'cxf-rt-transports-http-jetty', version: project.cxfVersion

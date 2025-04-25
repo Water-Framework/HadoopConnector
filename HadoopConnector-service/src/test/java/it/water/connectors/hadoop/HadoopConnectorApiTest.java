@@ -1,10 +1,11 @@
 package it.water.connectors.hadoop;
 
 import it.water.connectors.hadoop.api.HadoopConnectorSystemApi;
-import it.water.core.api.bundle.Runtime;
+import it.water.connectors.hadoop.api.options.HadoopOptions;
 import it.water.core.api.registry.ComponentRegistry;
 import it.water.core.api.service.Service;
 import it.water.core.interceptors.annotations.Inject;
+import it.water.core.registry.model.ComponentConfigurationFactory;
 import it.water.core.testing.utils.junit.WaterTestExtension;
 import lombok.Setter;
 import org.apache.hadoop.conf.Configuration;
@@ -34,26 +35,34 @@ class HadoopConnectorApiTest implements Service {
     @Setter
     private HadoopConnectorSystemApi hadoopConnectorSystemApi;
 
-    @Inject
-    @Setter
-    private Runtime runtime;
+    private HadoopOptions hadoopOptions;
 
-    private static MiniDFSCluster cluster;
-    private static FileSystem fs;
+    private MiniDFSCluster cluster;
+    private FileSystem fs;
 
     @BeforeAll
-    static void setup() throws IOException {
+    void setup() throws IOException {
         var baseDir = Files.createTempDirectory("hdfs-test");
         System.setProperty("test.build.data", baseDir.toAbsolutePath().toString());
         Configuration conf = new Configuration();
+        conf.set("dfs.namenode.rpc-bind-host", "localhost");
+        conf.set("dfs.client.use.datanode.hostname", "true");
         conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.toString());
-        cluster = new MiniDFSCluster.Builder(conf).build();
+        // Using always hostnames
+        conf.set("dfs.client.use.datanode.hostname", "true");
+        conf.set("hadoop.security.token.service.use_ip", "false");
+        cluster = new MiniDFSCluster.Builder(conf)
+                .checkDataNodeAddrConfig(true)
+                .nameNodeHttpPort(8020)
+                .build();
         cluster.waitClusterUp();
         fs = FileSystem.get(conf);
+        hadoopOptions = new HadoopOptionsImplOverride(fs.getUri().toString());
+        componentRegistry.registerComponent(HadoopOptions.class,hadoopOptions, ComponentConfigurationFactory.createNewComponentPropertyFactory().withPriority(2).build());
     }
 
     @AfterAll
-    static void teardown() throws IOException {
+    void teardown() throws IOException {
         if (fs != null) fs.close();
         if (cluster != null) cluster.shutdown();
     }
@@ -72,7 +81,7 @@ class HadoopConnectorApiTest implements Service {
     @Order(2)
     public void copyFileShouldWork() throws IOException {
         File exampleFile = new File(this.getClass().getClassLoader().getResource("tmp/example.txt").getFile());
-        hadoopConnectorSystemApi.copyFile(exampleFile, "/dest/example.txt", true);
+        hadoopConnectorSystemApi.upload(exampleFile, "/dest/example.txt", true);
     }
 
 
@@ -82,7 +91,7 @@ class HadoopConnectorApiTest implements Service {
         // Test will be runs if docker image has been launched.
         // Please runs "docker-compose -f docker-compose-svil-hdfs-only.yml up"
         File exampleFile = new File(this.getClass().getClassLoader().getResource("tmp/example.txt").getFile());
-        hadoopConnectorSystemApi.copyFile(exampleFile, "/dest/example.txt", true);
+        hadoopConnectorSystemApi.upload(exampleFile, "/dest/example.txt", true);
     }
 
 

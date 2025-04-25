@@ -20,7 +20,14 @@ public interface HadoopConnectorSystemApi extends BaseSystemApi {
      * @param deleteSource Whether delete file if it exists or not
      * @throws IOException IOException
      */
-    void copyFile(File file, String path, boolean deleteSource) throws IOException;
+    void upload(File file, String path, boolean deleteSource) throws IOException;
+
+    /**
+     * @param pathStr
+     * @return
+     * @throws IOException
+     */
+    InputStream download(String pathStr) throws IOException;
 
     /**
      * @param pathStr
@@ -28,13 +35,6 @@ public interface HadoopConnectorSystemApi extends BaseSystemApi {
      * @throws IOException
      */
     OutputStream appendToFile(String pathStr) throws IOException;
-
-    /**
-     * @param pathStr
-     * @return
-     * @throws IOException
-     */
-    InputStream readFile(String pathStr) throws IOException;
 
     /**
      * It deletes file
