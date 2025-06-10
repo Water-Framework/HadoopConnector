@@ -1,7 +1,6 @@
 package it.water.connectors.hadoop;
 
 import it.water.connectors.hadoop.api.options.HadoopOptions;
-import it.water.core.interceptors.annotations.FrameworkComponent;
 import lombok.Getter;
 
 /**

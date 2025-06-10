@@ -1,5 +1,25 @@
 package it.water.connectors.hadoop;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.hdfs.MiniDFSCluster;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtendWith;
+
 import it.water.connectors.hadoop.api.HadoopConnectorSystemApi;
 import it.water.connectors.hadoop.api.options.HadoopOptions;
 import it.water.core.api.registry.ComponentRegistry;
@@ -8,15 +28,6 @@ import it.water.core.interceptors.annotations.Inject;
 import it.water.core.registry.model.ComponentConfigurationFactory;
 import it.water.core.testing.utils.junit.WaterTestExtension;
 import lombok.Setter;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.hdfs.MiniDFSCluster;
-import org.apache.hadoop.io.IOUtils;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.io.*;
-import java.nio.file.Files;
 
 /**
  * Generated with Water Generator.
