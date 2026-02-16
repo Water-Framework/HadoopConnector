@@ -3,6 +3,27 @@
 ## Module Goal
 The HadoopConnector module provides a unified and abstracted interface for interacting with Hadoop Distributed File System (HDFS) within the Water Framework. It enables applications to upload, download, append, and manage files and folders on HDFS, abstracting the complexity of Hadoop APIs and providing a simple, permission-aware, and testable integration point.
 
+## Architecture Overview
+
+```mermaid
+graph TD
+    A[HadoopConnector Module] --> B[HadoopConnector-api]
+    A --> C[HadoopConnector-service]
+
+    B -->|defines| D[HadoopConnectorSystemApi]
+    B -->|defines| E[HadoopOptions]
+    C -->|implementation| F[HadoopConnectorSystemServiceImpl]
+    C -->|config| G[HadoopOptionsImpl]
+    F -->|connects to| H[HDFS Cluster]
+```
+
+## Sub-modules
+
+| Sub-module | Description |
+|---|---|
+| **HadoopConnector-api** | Defines `HadoopConnectorSystemApi` (file/folder operations) and `HadoopOptions` (connection config) |
+| **HadoopConnector-service** | Implementation using Hadoop 3.3.5 client libraries, with `HadoopOptionsImpl` for property loading |
+
 ## Module Technical Characteristics
 
 ### Core Technologies
