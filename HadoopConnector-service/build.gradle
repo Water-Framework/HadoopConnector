@@ -82,3 +82,20 @@ publishing {
         	}
     }
  }
+
+waterDescriptor {
+    moduleId    = 'it.water.connectors.hadoop'
+    displayName = 'Hadoop Connector'
+    description = 'Apache Hadoop HDFS integration for distributed file storage operations in Water Framework data pipelines'
+
+    properties {
+        property('water.connectors.hadoop.url') {
+            type         = 'url'
+            envVar       = 'WATER_HADOOP_URL'
+            required     = true
+            sensitive    = false
+            defaultValue = 'hdfs://localhost:8020'
+            description  = 'HDFS NameNode URL (hdfs://host:port)'
+        }
+    }
+}
