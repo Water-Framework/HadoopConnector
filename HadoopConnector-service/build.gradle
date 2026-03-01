@@ -90,6 +90,7 @@ waterDescriptor {
 
     properties {
         property('water.connectors.hadoop.url') {
+            name         = 'HDFS URL'
             type         = 'url'
             envVar       = 'WATER_HADOOP_URL'
             required     = true
