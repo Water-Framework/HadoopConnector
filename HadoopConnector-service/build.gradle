@@ -87,6 +87,7 @@ waterDescriptor {
     moduleId    = 'it.water.connectors.hadoop'
     displayName = 'Hadoop Connector'
     description = 'Apache Hadoop HDFS integration for distributed file storage operations in Water Framework data pipelines'
+    componentsPackage = 'it.water.connectors.hadoop.service'
 
     properties {
         property('water.connectors.hadoop.url') {
